@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NB MOTORPARTS SALES REPORT</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --primary: #1a237e;
+      --primary-dark: #000;
+      --accent: #007bff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: #f4f6f8;
+      font-size: 14px;
+    }
+    header {
+      background: linear-gradient(to right, var(--primary-dark), var(--primary));
+      color: #fff;
+      text-align: center;
+      padding: 1rem 0;
+      font-size: 1.6rem;
+      font-weight: 700;
+      letter-spacing: .8px;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+
+    .auth-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: calc(100vh - 76px);
+      padding: 16px;
+      background: linear-gradient(145deg,#283593 0%,#3949ab 50%,#5c6bc0 100%);
+    }
+
+    .auth-card {
+      background: #fff;
+      width: 100%;
+      max-width: 360px;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, .15);
+      padding: 24px 28px 32px;
+      animation: fadeIn .5s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: none; }
+    }
+
+    .auth-card h2 {
+      margin: 0 0 18px;
+      font-size: 1.4rem;
+      text-align: center;
+      color: var(--primary);
+    }
+
+    .auth-card label {
+      display: block;
+      font-weight: 600;
+      margin: 10px 0 4px;
+      font-size: 13px;
+    }
+
+    .auth-card input {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    .auth-card button {
+      width: 100%;
+      padding: 10px 0;
+      margin-top: 18px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      color: #fff;
+      background: var(--primary);
+    }
+
+    .switch {
+      margin-top: 14px;
+      text-align: center;
+      font-size: 13px;
+      cursor: pointer;
+      color: var(--accent);
+      user-select: none;
+    }
+
+    .switch:hover { text-decoration: underline; }
+
+    .container {
+      padding: 20px;
+      max-width: 1080px;
+      margin: auto;
+    }
+
+    .controls {
+      background: #fff;
+      padding: 16px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, .08);
+      position: sticky;
+      top: 60px; /* Just below the header */
+      z-index: 999;
+    }
+
+    label {
+      font-size: 13px;
+      display: block;
+      margin-bottom: 3px;
+      font-weight: 600;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 6px 10px;
+      margin-bottom: 10px;
+      font-size: 13px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    input[type="date"] {
+      width: auto;
+      display: inline-block;
+      padding: 4px 8px;
+      font-size: 12px;
+    }
+
+    .btn {
+      padding: 6px 12px;
+      border: none;
+      color: #fff;
+      cursor: pointer;
+      border-radius: 4px;
+      margin-right: 8px;
+      font-size: 13px;
+    }
+
+    .btn-thai-blue { background: var(--primary); }
+    .btn-warning { background: orange; }
+    .btn-danger { background: red; }
+    .btn-success { background: green; }
+    .btn-clear { background: #d3d3d3; color: #000; }
+    .btn-sm { padding: 4px 8px; font-size: 12px; }
+
+    .sales-table-container {
+      max-height: 380px;
+      overflow-y: auto;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, .08);
+      margin-bottom: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    thead th {
+      background: #e0e0e0;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      text-align: center;
+      padding: 8px;
+    }
+
+    th, td {
+      padding: 6px 8px;
+      text-align: center;
+      border: 1px solid #ddd;
+    }
+
+    tfoot td {
+      font-weight: 700;
+      background: #f0f0f0;
+    }
+
+    .bottom-controls {
+      text-align: right;
+    }
+
+    .hidden { display: none !important; }
+
+    @media(max-width:600px) {
+      input[type="date"] {
+        width: 100%;
+        display: block;
+        margin-bottom: 10px;
+      }
+    }
+  </style>
+</head>
+<body>  
+
+<header>NB MOTORPARTS SALES REPORT</header>
+
+<!-- ========== AUTH SECTION ========== -->
+<div id="authWrapper" class="auth-wrapper">
+  <div class="auth-card" id="loginCard">
+    <h2>Welcome Back</h2>
+    <form id="loginForm">
+      <label for="loginUser">Username</label>
+      <input type="text" id="loginUser" required>
+      <label for="loginPass">Password</label>
+      <input type="password" id="loginPass" required>
+      <button type="submit">Log In</button>
+      <div class="switch" id="goRegister">Need an account? Create one</div>
+    </form>
+  </div>
+
+  <div class="auth-card hidden" id="registerCard">
+    <h2>Create Account</h2>
+    <form id="registerForm">
+      <label for="regUser">Username</label>
+      <input type="text" id="regUser" required>
+      <label for="regPass">Password</label>
+      <input type="password" id="regPass" required>
+      <label for="regPass2">Confirm Password</label>
+      <input type="password" id="regPass2" required>
+      <button type="submit">Sign Up</button>
+      <div class="switch" id="goLogin">Already have an account? Log in</div>
+    </form>
+  </div>
+</div>
+
+<!-- ========== MAIN APP SECTION (HIDDEN UNTIL LOGGED IN) ========== -->
+<div id="appSection" class="hidden">
+  <div class="container">
+    <div class="controls">
+      <input type="text" id="searchInput" placeholder="Search item name...">
+      <label>Filter by Date:</label>
+      <input type="date" id="startDate">
+      <input type="date" id="endDate">
+      <button class="btn btn-thai-blue" onclick="applyFilters()">Apply</button>
+      <button class="btn btn-danger" onclick="clearFilters()">Clear Filter</button>
+      <button class="btn btn-clear" id="logoutBtn" style="float:right">Log Out</button>
+    </div>
+
+    <form id="salesForm">
+      <label for="saleItemName">Item Name:</label>
+      <input type="text" id="saleItemName" required>
+      <label for="saleQuantity">Quantity:</label>
+      <input type="number" id="saleQuantity" required>
+      <label for="salePuhunan">Cost Price:</label>
+      <input type="number" id="salePuhunan" step="0.01" required>
+      <label for="saleSRP">Selling Price:</label>
+      <input type="number" id="saleSRP" step="0.01" required>
+      <label for="saleDate">Date:</label>
+      <input type="date" id="saleDate" required>
+      <button type="submit" class="btn btn-thai-blue">Add Sale</button>
+    </form>
+
+    <div class="sales-table-container">
+      <table id="salesTable">
+        <thead>
+          <tr>
+            <th>Date</th><th>Item</th><th>Qty</th><th>Cost</th><th>SRP</th>
+            <th>Total Cost</th><th>Total SRP</th><th>Profit</th><th>Action</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+        <tfoot>
+  <tr>
+    <td colspan="2">TOTAL</td>
+    <td id="totalQty">0</td>
+    <td></td><td></td>
+    <td id="totalPuhunan">₱0.00</td>
+    <td id="totalSRP">₱0.00</td>
+    <td id="totalProfitDisplay">₱0.00</td>
+    <td></td>
+  </tr>
+</tfoot>
+      </table>
+    </div>
+
+   <div class="bottom-controls" style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; align-items: center; margin-top: 10px;">
+  <button class="btn btn-success" onclick="exportToExcel()">Export to Excel</button>
+
+  <!-- Import Button -->
+  <label for="importFile" class="btn" style="background-color: #007bff;">Import Excel</label>
+  <input type="file" id="importFile" accept=".xlsx,.xls" onchange="importExcel(event)" style="display:none">
+
+  <!-- Clear Sales Button -->
+  <button class="btn btn-clear" onclick="clearSales()">Clear Sales</button>
+</div>
+
+<!-- ========== SCRIPT SECTION ========== -->
+<script>
+/* ---------------- AUTH HANDLING ---------------- */
+const MAX_USERS = 2;
+const LS_USERS_KEY = "nbUsers";
+const LS_CURRENT   = "nbCurrentUser";
+
+const loginCard    = document.getElementById("loginCard");
+const registerCard = document.getElementById("registerCard");
+const authWrapper  = document.getElementById("authWrapper");
+const appSection   = document.getElementById("appSection");
+
+const loginUser = document.getElementById("loginUser");
+const loginPass = document.getElementById("loginPass");
+const regUser   = document.getElementById("regUser");
+const regPass   = document.getElementById("regPass");
+const regPass2  = document.getElementById("regPass2");
+
+const users = JSON.parse(localStorage.getItem(LS_USERS_KEY)) || [];
+
+// Toggle auth cards
+document.getElementById("goRegister").onclick = () => toggleAuth("register");
+document.getElementById("goLogin").onclick    = () => toggleAuth("login");
+function toggleAuth(mode){
+  loginCard.classList.toggle("hidden", mode === "register");
+  registerCard.classList.toggle("hidden", mode === "login");
+}
+
+// Auto‑login if session exists
+(function(){
+  const current = localStorage.getItem(LS_CURRENT);
+  if(current){ showApp(); }
+})();
+
+// Register
+document.getElementById("registerForm").addEventListener("submit",e=>{
+  e.preventDefault();
+  const u = regUser.value.trim(), p = regPass.value, p2 = regPass2.value;
+  if(!u||!p)             return alert("Fill all fields.");
+  if(p!==p2)             return alert("Passwords do not match.");
+  if(users.find(el=>el.user===u)) return alert("Username already exists.");
+  if(users.length>=MAX_USERS)     return alert("Maximum of 2 accounts reached.");
+  users.push({user:u,pass:p});
+  localStorage.setItem(LS_USERS_KEY, JSON.stringify(users));
+  alert("Account created! You can now log in.");
+  toggleAuth("login");
+  regUser.value = regPass.value = regPass2.value = "";
+});
+
+// Log in
+document.getElementById("loginForm").addEventListener("submit",e=>{
+  e.preventDefault();
+  const u = loginUser.value.trim(), p = loginPass.value;
+  if(users.find(el=>el.user===u && el.pass===p)){
+    localStorage.setItem(LS_CURRENT, u);
+    showApp();
+    loginUser.value = loginPass.value = "";
+  } else alert("Invalid credentials.");
+});
+
+// Log out
+document.getElementById("logoutBtn").onclick = ()=>{
+  localStorage.removeItem(LS_CURRENT);
+  authWrapper.classList.remove("hidden");
+  appSection.classList.add("hidden");
+};
+
+// Display app section
+function showApp(){
+  authWrapper.classList.add("hidden");
+  appSection.classList.remove("hidden");
+}
+
+/* ---------------- SALES APP LOGIC ---------------- */
+let sales          = JSON.parse(localStorage.getItem("salesData")) || [];
+let filteredSales  = [...sales];
+let editingIndex   = null;
+
+// DOM refs
+const salesForm    = document.getElementById("salesForm");
+const saleItemName = document.getElementById("saleItemName");
+const saleQuantity = document.getElementById("saleQuantity");
+const salePuhunan  = document.getElementById("salePuhunan");
+const saleSRP      = document.getElementById("saleSRP");
+const saleDate     = document.getElementById("saleDate");
+const salesTable   = document.getElementById("salesTable");
+
+const totalPuhunan       = document.getElementById("totalPuhunan");
+const totalSRP           = document.getElementById("totalSRP");
+const totalProfitDisplay = document.getElementById("totalProfitDisplay");
+const totalQtyCell       = document.getElementById("totalQty");
+
+// Filters
+const searchInput = document.getElementById("searchInput");
+const startDate   = document.getElementById("startDate");
+const endDate     = document.getElementById("endDate");
+
+/* ----- Add / Update sale (with merge) ----- */
+salesForm.addEventListener("submit", e=>{
+  e.preventDefault();
+  const itemName = saleItemName.value.trim();
+  const quantity = parseInt(saleQuantity.value,10);
+  const puhunan  = parseFloat(salePuhunan.value);
+  const srp      = parseFloat(saleSRP.value);
+  const date     = saleDate.value;
+
+  if(!itemName || isNaN(quantity)||isNaN(puhunan)||isNaN(srp)||!date)
+    return alert("Fill all fields correctly.");
+
+  const newSale = { itemName, quantity, puhunan, srp, date };
+
+  if(editingIndex !== null){
+    // updating an existing row
+    sales[editingIndex] = newSale;
+    editingIndex = null;
+    salesForm.querySelector("button").textContent = "Add Sale";
+  } else {
+    // merge if same item & date exist
+    const idx = sales.findIndex(s=>s.itemName.toLowerCase()===itemName.toLowerCase() && s.date===date);
+    if(idx!==-1){
+      const ex = sales[idx];
+      ex.quantity += quantity;
+      ex.puhunan  = puhunan; // keep latest cost price
+      ex.srp      = srp;     // keep latest selling price
+    } else {
+      sales.push(newSale);
+    }
+  }
+
+  saveSales();
+  salesForm.reset();
+});
+
+/* ----- Save & Render ----- */
+function saveSales(){
+  localStorage.setItem("salesData", JSON.stringify(sales));
+  applyFilters(); // keeps current filter view fresh
+}
+
+function renderSales(list){
+  filteredSales = list;
+  const tbody = salesTable.querySelector("tbody");
+  tbody.innerHTML = "";
+
+  let sumQty=0,sumCost=0,sumSRP=0,sumProfit=0;
+
+  list.sort((a,b)=>new Date(a.date)-new Date(b.date)).forEach(s=>{
+    const tCost = s.puhunan * s.quantity;
+    const tSrp  = s.srp     * s.quantity;
+    const prof  = tSrp - tCost;
+
+    sumQty    += s.quantity;
+    sumCost   += tCost;
+    sumSRP    += tSrp;
+    sumProfit += prof;
+
+    tbody.insertAdjacentHTML("beforeend",`
+      <tr>
+        <td>${s.date}</td>
+        <td>${s.itemName}</td>
+        <td>${s.quantity}</td>
+        <td>₱${s.puhunan.toFixed(2)}</td>
+        <td>₱${s.srp.toFixed(2)}</td>
+        <td>₱${tCost.toFixed(2)}</td>
+        <td>₱${tSrp.toFixed(2)}</td>
+        <td>₱${prof.toFixed(2)}</td>
+        <td>
+          <button class="btn btn-warning btn-sm" onclick="editSale(${sales.indexOf(s)})">Edit</button>
+          <button class="btn btn-danger btn-sm"  onclick="deleteSale(${sales.indexOf(s)})">Delete</button>
+        </td>
+      </tr>
+    `);
+  });
+
+  totalQtyCell.textContent        = sumQty;
+  totalPuhunan.textContent        = `₱${sumCost.toFixed(2)}`;
+  totalSRP.textContent            = `₱${sumSRP.toFixed(2)}`;
+  totalProfitDisplay.textContent  = `₱${sumProfit.toFixed(2)}`;
+}
+
+/* ----- Delete / Edit helpers ----- */
+function deleteSale(i){
+  if(confirm("Delete this sale?")){
+    sales.splice(i,1);
+    saveSales();
+  }
+}
+function editSale(i){
+  const s = sales[i];
+  saleItemName.value = s.itemName;
+  saleQuantity.value = s.quantity;
+  salePuhunan.value  = s.puhunan;
+  saleSRP.value      = s.srp;
+  saleDate.value     = s.date;
+  editingIndex = i;
+  salesForm.querySelector("button").textContent = "Update Sale";
+}
+
+/* ----- Filters ----- */
+function applyFilters(){
+  const term  = searchInput.value.toLowerCase();
+  const start = startDate.value;
+  const end   = endDate.value;
+
+  const filtered = sales.filter(s=>
+    (!term || s.itemName.toLowerCase().includes(term)) &&
+    (!start || s.date >= start) &&
+    (!end   || s.date <= end)
+  );
+  renderSales(filtered);
+}
+function clearFilters(){
+  searchInput.value = startDate.value = endDate.value = "";
+  renderSales(sales);
+}
+
+/* ----- Excel Export / Import ----- */
+function exportToExcel(){
+  const data=[["Date","Item","Qty","Cost","SRP","Total Cost","Total SRP","Profit"]];
+  let sumCost=0,sumSrp=0,sumProfit=0;
+
+  filteredSales.forEach(s=>{
+    const tC=s.puhunan*s.quantity;
+    const tS=s.srp*s.quantity;
+    const p =tS-tC;
+    sumCost+=tC;sumSrp+=tS;sumProfit+=p;
+    data.push([s.date,s.itemName,s.quantity,s.puhunan.toFixed(2),s.srp.toFixed(2),
+               tC.toFixed(2),tS.toFixed(2),p.toFixed(2)]);
+  });
+  data.push(["","","","","TOTAL",sumCost.toFixed(2),sumSrp.toFixed(2),sumProfit.toFixed(2)]);
+  const ws=XLSX.utils.aoa_to_sheet(data);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,"SalesReport");
+  XLSX.writeFile(wb,"NB_Motorparts_Sales_Report.xlsx");
+}
+
+function importExcel(event){
+  const file=event.target.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const data=new Uint8Array(e.target.result);
+    const wb=XLSX.read(data,{type:"array"});
+    const sheet=wb.Sheets[wb.SheetNames[0]];
+    const rows=XLSX.utils.sheet_to_json(sheet,{header:1,defval:""});
+    rows.slice(1).forEach(r=>{
+      const [date,item,qty,puhunan,srp]=r;
+      if(date&&item&&qty&&puhunan&&srp&&!isNaN(qty)){
+        const importSale={
+          date:date.trim(),
+          itemName:item.trim(),
+          quantity:parseInt(qty,10),
+          puhunan:parseFloat(puhunan),
+          srp:parseFloat(srp)
+        };
+        // merge during import
+        const idx=sales.findIndex(s=>s.itemName.toLowerCase()===importSale.itemName.toLowerCase()&&s.date===importSale.date);
+        if(idx!==-1){
+          sales[idx].quantity+=importSale.quantity;
+        }else{
+          sales.push(importSale);
+        }
+      }
+    });
+    saveSales();
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+/* ----- Clear all ----- */
+function clearSales(){
+  if(confirm("Are you sure you want to clear your sales report?")){
+    sales=[];
+    localStorage.removeItem("salesData");
+    renderSales([]);
+  }
+}
+
+/* ----- Initial render ----- */
+renderSales(sales);
+</script>
+</body>
+</html>
